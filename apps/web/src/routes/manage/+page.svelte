@@ -52,6 +52,7 @@
   import { combineLatest, map, Observable, share, Subject, switchMap, takeUntil } from 'rxjs';
   import { onMount, tick } from 'svelte';
   import Fa from 'svelte-fa';
+  import type { YomiyasuParams } from '../../lib/data/yomiyasu';
 
   const booksAreLoading$ = database.listLoading$.pipe(map((isLoading) => isLoading));
 
@@ -265,7 +266,7 @@
     await goto(`${pagePath}/b?id=${id}`);
   }
 
-  async function onFilesChange(fileList: FileList | File[], yomiyasuId?: string, mouse?: boolean) {
+  async function onFilesChange(fileList: FileList | File[], yomiyasuParams?: YomiyasuParams) {
     if (!operationAllowed()) {
       return;
     }
@@ -301,9 +302,10 @@
       cancelSignal
     ).catch((catchedError) => catchedError.message);
 
-    if (yomiyasuId) {
+    if (yomiyasuParams) {
+      const { yomiyasuId, mouse, incognito } = yomiyasuParams;
       // Send a message to the parent window to indicate that the import is done
-      window.parent.postMessage({ event: 'finished', title, yomiyasuId, mouse }, '*');
+      window.parent.postMessage({ event: 'finished', title, yomiyasuId, mouse, incognito }, '*');
     }
 
     resetProgress();
@@ -647,7 +649,11 @@
 
     const book = ev.data.book as File;
 
-    onFilesChange([book], ev.data.yomiyasuId, ev.data.mouse);
+    onFilesChange([book], {
+      yomiyasuId: ev.data.yomiyasuId,
+      mouse: ev.data.mouse,
+      incognito: ev.data.incognito
+    });
   }
 
   onMount(() => {
