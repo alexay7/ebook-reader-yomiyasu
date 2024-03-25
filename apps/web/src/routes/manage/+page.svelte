@@ -50,7 +50,7 @@
   import { reduceToEmptyString } from '$lib/functions/rxjs/reduce-to-empty-string';
   import pLimit from 'p-limit';
   import { combineLatest, map, Observable, share, Subject, switchMap, takeUntil } from 'rxjs';
-  import { tick } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import Fa from 'svelte-fa';
 
   const booksAreLoading$ = database.listLoading$.pipe(map((isLoading) => isLoading));
@@ -265,7 +265,7 @@
     await goto(`${pagePath}/b?id=${id}`);
   }
 
-  async function onFilesChange(fileList: FileList | File[]) {
+  async function onFilesChange(fileList: FileList | File[], yomiyasuId?: string, mouse?: boolean) {
     if (!operationAllowed()) {
       return;
     }
@@ -285,7 +285,7 @@
       return;
     }
 
-    const error = await importData(
+    const { error, title } = await importData(
       document,
       getStorageHandler(
         window,
@@ -300,6 +300,11 @@
       files,
       cancelSignal
     ).catch((catchedError) => catchedError.message);
+
+    if (yomiyasuId) {
+      // Send a message to the parent window to indicate that the import is done
+      window.parent.postMessage({ event: 'finished', title, yomiyasuId, mouse }, '*');
+    }
 
     resetProgress();
 
@@ -636,6 +641,22 @@
       ? new Date(seconds * 1000).toISOString().substr(11, 8)
       : '??:??:??';
   }
+
+  function handleMessage(ev: MessageEvent) {
+    if (!ev.data || !ev.data.book) return;
+
+    const book = ev.data.book as File;
+
+    onFilesChange([book], ev.data.yomiyasuId, ev.data.mouse);
+  }
+
+  onMount(() => {
+    window.addEventListener('message', handleMessage);
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  });
 </script>
 
 <svelte:head>

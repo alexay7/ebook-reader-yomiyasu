@@ -46,6 +46,8 @@ export async function importData(
     targetHandler.clearData(false);
   }
 
+  let importedBook = '';
+
   files.forEach((file) =>
     tasks.push(
       limiter(async () => {
@@ -67,6 +69,8 @@ export async function importData(
           checkCancelAndProgress(cancelSignal, true, true);
 
           currentTitle = bookContent.title;
+
+          importedBook = currentTitle;
 
           targetHandler.startContext(
             { title: bookContent.title, imagePath: bookContent.coverImage || '' },
@@ -95,7 +99,7 @@ export async function importData(
 
   await Promise.all(tasks).catch(() => {});
 
-  return errorMessage;
+  return { error: errorMessage, title: importedBook };
 }
 
 export async function importBackup(
