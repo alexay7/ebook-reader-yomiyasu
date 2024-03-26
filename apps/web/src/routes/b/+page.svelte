@@ -196,6 +196,7 @@
   let confettiWidthModifier = 36;
   let confettiMaxRuns = 0;
   let showReaderImageGallery = false;
+  let lastClickTime = 0;
   const queuedReaderImageGalleryPictures = new Map<string, boolean>();
 
   const bookId$ = iffBrowser(() => readableToObservable(page)).pipe(
@@ -884,6 +885,11 @@
   }
 
   function onKeydown(ev: KeyboardEvent) {
+    // Replicate the event on the parent window
+    if (window.parent !== window) {
+      window.parent.window.dispatchEvent(new KeyboardEvent('keydown', ev));
+    }
+
     if (
       $skipKeyDownListener$ ||
       ev.altKey ||
@@ -916,6 +922,13 @@
       document.activeElement.blur();
     }
     ev.preventDefault();
+  }
+
+  function onDoubleClick(ev: MouseEvent) {
+    // Dispatch the event on the parent window
+    if (window.parent !== window) {
+      window.parent.window.dispatchEvent(new MouseEvent('dblclick', ev));
+    }
   }
 
   function getBookIdSync() {
@@ -1649,6 +1662,20 @@
 <svelte:window
   on:keydown={onKeydown}
   on:beforeunload={handleUnload}
+  on:dblclick={onDoubleClick}
+  on:click={() => {
+    // Detect double click on mobile
+    if ($isMobile$) {
+      const currentTime = Date.now();
+      const timeDiff = currentTime - lastClickTime;
+
+      if (timeDiff < 300) {
+        onDoubleClick(new MouseEvent('dblclick'));
+      }
+
+      lastClickTime = currentTime;
+    }
+  }}
   on:resize={() => {
     if ($statisticsEnabled$ && !$isTrackerPaused$) {
       pauseTracker();
