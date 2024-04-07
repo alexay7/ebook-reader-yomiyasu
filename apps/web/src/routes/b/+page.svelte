@@ -413,9 +413,11 @@
   );
 
   const textSelector$ = iffBrowser(() => fromEvent(document, 'selectionchange')).pipe(
-    debounceTime(200),
+    debounceTime(700),
     tap(() => {
       const currentSelected = window.getSelection()?.toString() || '';
+
+      window.parent.postMessage({ action: 'selection', value: currentSelected }, '*');
 
       if (!currentSelected && lastSelectedRangeWasEmpty) {
         lastSelectedRange = undefined;
