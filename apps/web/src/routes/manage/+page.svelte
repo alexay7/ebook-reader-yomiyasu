@@ -305,7 +305,11 @@
     if (yomiyasuParams) {
       const { yomiyasuId, mouse, incognito } = yomiyasuParams;
       // Send a message to the parent window to indicate that the import is done
-      window.parent.postMessage({ event: 'finished', title, yomiyasuId, mouse, incognito }, '*');
+      console.log($bookCards$);
+      window.parent.postMessage(
+        { event: 'finished', title, yomiyasuId, mouse, incognito, bookList: $bookCards$ },
+        '*'
+      );
     }
 
     resetProgress();
