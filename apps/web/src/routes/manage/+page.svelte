@@ -310,8 +310,38 @@
       // Send a message to the parent window to indicate that the import is done
       const bookList = getBookList();
 
+      const foundBook = bookList.find((book) => book.title === title);
+
+      let idToOpen = 0;
+
+      if (foundBook){
+        const isForBrowser = $storageSource$ === StorageKey.BROWSER;
+        const handler = getStorageHandler(
+          window,
+          $storageSource$,
+          '',
+          isForBrowser,
+          $cacheStorageData$,
+          $replicationSaveBehavior$,
+          $statisticsMergeMode$,
+          $readingGoalsMergeMode$
+        );
+
+        if (!cacheStorageData$) {
+          handler.clearData(false);
+        }
+
+        handler.startContext({
+          id: isForBrowser ? foundBook.id : 0,
+          title: foundBook.title,
+          imagePath: foundBook.imagePath
+        });
+
+        idToOpen = await handler.prepareBookForReading();
+      }
+
       window.parent.postMessage(
-          { event: 'finished', title, yomiyasuId, mouse, incognito, bookList: bookList },
+          { event: 'finished', title, yomiyasuId, mouse, incognito, bookId:idToOpen },
           '*'
         );
     }
