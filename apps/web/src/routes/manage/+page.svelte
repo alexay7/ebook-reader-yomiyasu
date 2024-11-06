@@ -279,6 +279,7 @@
     const files = Array.from(fileList).filter((f) => supportedExtRegex.test(f.name));
     const errorTitle = 'Bookimport failed';
 
+
     if (!files.length) {
       resetProgress();
 
@@ -300,16 +301,19 @@
       ),
       files,
       cancelSignal
-    ).catch((catchedError) => catchedError.message);
+    ).catch((catchedError) => {
+      return catchedError.message}
+    );
 
     if (yomiyasuParams) {
       const { yomiyasuId, mouse, incognito } = yomiyasuParams;
       // Send a message to the parent window to indicate that the import is done
-      console.log($bookCards$);
+      const bookList = getBookList();
+
       window.parent.postMessage(
-        { event: 'finished', title, yomiyasuId, mouse, incognito, bookList: $bookCards$ },
-        '*'
-      );
+          { event: 'finished', title, yomiyasuId, mouse, incognito, bookList: bookList },
+          '*'
+        );
     }
 
     resetProgress();
@@ -658,6 +662,16 @@
       mouse: ev.data.mouse,
       incognito: ev.data.incognito
     });
+  }
+
+  function getBookList(): BookCardProps[] {
+    let bookList: BookCardProps[] = [];
+
+    $bookCards$.forEach((book) => {
+      bookList.push(book);
+    });
+
+    return bookList;
   }
 
   onMount(() => {
